@@ -1,4 +1,3 @@
-from datetime import timedelta
 import os
 from distutils import util
 
@@ -25,6 +24,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
+    'django_filters',
     'rest_framework.authtoken',
     'djoser',
     'recipes',
@@ -106,15 +106,31 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 AUTH_USER_MODEL = 'users.User'
 
-
 REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.IsAuthenticatedOrReadOnly',
+        'rest_framework.permissions.IsAuthenticated',
     ],
 
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.TokenAuthentication',
-    ]
+    ],
+    'DEFAULT_PAGINATION_CLASS':
+        'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 5,
+}
+
+DJOSER = {
+    'LOGIN_FIELD': 'email',
+    'HIDE_USERS': False,
+    'SERIALIZERS': {
+        'user': ('api.serializers.CustomUserSerializer'),
+        'user_create': ('api.serializers.CreateUserSerializer'),
+        'current_user': ('api.serializers.CustomUserSerializer'),
+    },
+    'PERMISSIONS': {
+        'user': ('rest_framework.permissions.IsAuthenticated'),
+        'user_delete': ('rest_framework.permissions.IsAdminUser'),
+    },
 }
 
 

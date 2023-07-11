@@ -161,14 +161,14 @@ class Favorite(models.Model):
     Связывает модель Recipe и модель User.
     '''
     user = models.ForeignKey(
-        verbose_name='Пользователь, который добавляет рецепт в избранное',
-        related_name='favorite_recipe',
+        verbose_name='Пользователь, который добавил рецепт в избранное',
+        related_name='favorite_recipes',
         to=User,
         on_delete=models.CASCADE,
     )
     recipe = models.ForeignKey(
-        verbose_name='Рецепт, который добавляет пользователь в избранное',
-        related_name='favorite_user',
+        verbose_name='Рецепт, который пользователь добавил в избранное',
+        related_name='favorite_users',
         to=Recipe,
         on_delete=models.CASCADE,
     )
@@ -198,13 +198,13 @@ class ShoppingCart(models.Model):
     '''
     user = models.ForeignKey(
         verbose_name='Пользователь, добавляющий рецепт в список покупок',
-        related_name='shopping_cart_recipe',
+        related_name='shopping_cart_recipes',
         to=User,
         on_delete=models.CASCADE,
     )
     recipe = models.ForeignKey(
         verbose_name='Рецепт, добавляемый пользователем в список покупок',
-        related_name='shopping_cart_user',
+        related_name='shopping_cart_users',
         to=Recipe,
         on_delete=models.CASCADE,
     )

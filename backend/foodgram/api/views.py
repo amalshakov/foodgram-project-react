@@ -1,6 +1,6 @@
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
-from rest_framework.permissions import AllowAny, IsAuthenticated, IsAuthenticatedOrReadOnly
+from rest_framework.permissions import AllowAny, IsAuthenticated, IsAuthenticatedOrReadOnly, IsAdminUser, DjangoModelPermissions
 from rest_framework.response import Response
 from rest_framework.request import Request
 from djoser.views import UserViewSet as DjoserUserViewSet
@@ -11,17 +11,18 @@ from django.http import HttpResponse
 
 from users.models import User, Follow
 from recipes.models import Tag, Ingredient, Recipe, Favorite, ShoppingCart, IngredientInRecipe
-from serializers import CustomUserSerializer, FollowSerializer, TagSerializer, IngredientSerializer, RecipeSerializer, CreateRecipeSerializer, RecipeMinifiedSerializer
-from pagination import PageLimitPagination
-from permissions import AuthorStaffOrReadOnly
-from filters import RecipeFilter
+from .serializers import CustomUserSerializer, FollowSerializer, TagSerializer, IngredientSerializer, RecipeSerializer, CreateRecipeSerializer, RecipeMinifiedSerializer
+from .pagination import PageLimitPagination
+from .permissions import AuthorStaffOrReadOnly
+from .filters import RecipeFilter
 
 
 class UserViewSet(DjoserUserViewSet):
     '''ViewSet для работы с пользователями.'''
     queryset = User.objects.all()
     serializer_class = CustomUserSerializer
-    permission_classes = (AllowAny,)
+    permission_classes = (IsAuthenticated,)
+    pagination_class = PageLimitPagination
 
     @action(
         detail=False,
@@ -140,11 +141,11 @@ class RecipeViewSet(viewsets.ModelViewSet):
         user = request.user
         ingredients = IngredientInRecipe.objects.filter(
             recipe__shopping_cart_users__user=user
-        ).values('ingredient__name', 'ingredient__measurement_unit').annotate(
+        ).values('ingredients__name', 'ingredients__measurement_unit').annotate(
             amount=Sum('amount'))
         data = ingredients.values_list(
-            'ingredient__name',
-            'ingredient__measurement_unit',
+            'ingredients__name',
+            'ingredients__measurement_unit',
             'amount',
         )
         shopping_cart = 'Список покупок:\n'

@@ -35,7 +35,6 @@ class CustomUserSerializer(UserSerializer):
             'username',
             'first_name',
             'last_name',
-            'password',
             'is_subscribed',
         )
 
@@ -141,6 +140,7 @@ class ReadIngredientInRecipeSerializer(serializers.ModelSerializer):
 
 class IngredientInRecipeSerializer(serializers.ModelSerializer):
     '''Сериализатор для выбора ингредиента при создании рецепта.'''
+    id = serializers.IntegerField()
 
     class Meta:
         model = IngredientInRecipe
@@ -206,7 +206,7 @@ class CreateRecipeSerializer(serializers.ModelSerializer):
     author = UserSerializer(read_only=True)
 
     class Meta:
-        models = Recipe
+        model = Recipe
         fields = (
             'id',
             'ingredients',
@@ -241,7 +241,7 @@ class CreateRecipeSerializer(serializers.ModelSerializer):
                 ), defaults={'amount': amount}
             )
 
-    def create(self, validated_data: QuerySet[list]) -> Recipe:
+    def create(self, validated_data: dict) -> Recipe:
         '''Создает рецепт.'''
         tags_data = validated_data.pop('tags')
         ingredients_data = validated_data.pop('ingredients')
@@ -254,12 +254,11 @@ class CreateRecipeSerializer(serializers.ModelSerializer):
         recipe.tags.set(tags_data)
         return recipe
 
-    def update(
-        self, recipe: Recipe, validated_data: QuerySet[list]
-    ) -> Recipe:
+    def update(self, recipe, validated_data):
         '''Обновляет рецепт.'''
-        ingredients = validated_data.pop('ingredients')
+        print(validated_data)
         tags = validated_data.pop('tags')
+        ingredients = validated_data.pop('ingredients')
         IngredientInRecipe.objects.filter(recipe=recipe).delete()
         self.create_ingredients(ingredients, recipe)
         recipe.tags.set(tags)

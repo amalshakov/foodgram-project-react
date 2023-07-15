@@ -56,7 +56,7 @@ class UserViewSet(DjoserUserViewSet):
             serializer.is_valid(raise_exception=True)
             Follow.objects.create(user=user, author=author)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
-        Follow.objects.delete(user=user, author=author)
+        Follow.objects.filter(user=user, author=author).delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
@@ -81,11 +81,11 @@ class RecipeViewSet(viewsets.ModelViewSet):
             return RecipeSerializer
         return CreateRecipeSerializer
 
-    def perform_create(self, serializer):
-        return serializer.save(author=self.request.user)
+    # def perform_create(self, serializer):
+    #     return serializer.save(author=self.request.user)
 
-    def perform_update(self, serializer):
-        return serializer.save(author=self.request.user)
+    # def perform_update(self, serializer):
+    #     return serializer.save(author=self.request.user)
 
     @action(
         detail=True,

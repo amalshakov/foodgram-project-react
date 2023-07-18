@@ -1,6 +1,6 @@
 import os
-from distutils import util
 
+from distutils import util
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -8,13 +8,10 @@ load_dotenv()
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 SECRET_KEY = os.getenv('SECRET_KEY')
-#  SECRET_KEY = '^m_okyz=0(fok91uiss13#69wbq!@ijrvenvo7321hecjt3jjl'
 
 DEBUG = bool(util.strtobool(os.getenv('DEBUG', default='False')))
-#  DEBUG = True
 
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', default='127.0.0.1').split(',')
-#  ALLOWED_HOSTS = []
 
 INSTALLED_APPS = [
     'django.contrib.admin',

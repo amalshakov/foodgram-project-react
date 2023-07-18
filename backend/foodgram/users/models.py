@@ -1,6 +1,6 @@
-from django.db import models
-from django.db.models import F, Q, CheckConstraint, UniqueConstraint
 from django.contrib.auth.models import AbstractUser
+from django.db import models
+from django.db.models import CheckConstraint, F, Q, UniqueConstraint
 
 from foodgram.settings import EMAIL_MAX_LENGTH, USERNAME_MAX_LENGTH
 from .validators import validate_username
@@ -37,7 +37,7 @@ class User(AbstractUser):
         verbose_name_plural = 'Пользователи'
         ordering = ('username',)
 
-    def __str__(self) -> str:
+    def __str__(self):
         return f'{self.username}'
 
 
@@ -70,5 +70,5 @@ class Follow(models.Model):
             ),
         ]
 
-    def __str__(self) -> str:
+    def __str__(self):
         return f'{self.user.username} -> {self.author.username}'

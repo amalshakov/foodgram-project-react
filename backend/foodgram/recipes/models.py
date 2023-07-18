@@ -1,8 +1,9 @@
-from django.db import models
-from django.db.models import CheckConstraint, UniqueConstraint
 from django.core.validators import MaxValueValidator, MinValueValidator
+from django.db import models
+from django.db.models import UniqueConstraint
+from foodgram.settings import (MAX_AMOUNT_INGREDIENT, MAX_COOKING_TIME,
+                               MIN_AMOUNT_INGREDIENT, MIN_COOKING_TIME)
 
-from foodgram.settings import MAX_COOKING_TIME, MIN_COOKING_TIME, MAX_AMOUNT_INGREDIENT, MIN_AMOUNT_INGREDIENT
 from users.models import User
 from .validators import validate_slug
 
@@ -32,7 +33,7 @@ class Tag(models.Model):
         verbose_name_plural = 'Теги'
         ordering = ('slug',)
 
-    def __str__(self) -> str:
+    def __str__(self):
         return f'{self.name} - {self.slug}'
 
 
@@ -93,7 +94,7 @@ class Recipe(models.Model):
         verbose_name = 'Рецепт'
         verbose_name_plural = 'Рецепты'
 
-    def __str__(self) -> str:
+    def __str__(self):
         return self.name
 
 
@@ -152,7 +153,7 @@ class IngredientInRecipe(models.Model):
             ),
         ]
 
-    def __str__(self) -> str:
+    def __str__(self):
         return f'{self.amount}'
 
 
@@ -182,13 +183,9 @@ class Favorite(models.Model):
                 fields=['user', 'recipe'],
                 name='unique_favorite',
             ),
-            # CheckConstraint(
-            #     check=~Q(user=F('recipe.autor')),
-            #     name='no_self_favorite'
-            # ),
         ]
 
-    def __str__(self) -> str:
+    def __str__(self):
         return f'{self.user} добавил в избранное {self.recipe}'
 
 
@@ -220,5 +217,5 @@ class ShoppingCart(models.Model):
             ),
         ]
 
-    def __str__(self) -> str:
+    def __str__(self):
         return f'{self.user} добавил в список покупок {self.recipe}'

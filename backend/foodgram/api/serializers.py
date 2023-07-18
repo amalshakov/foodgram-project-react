@@ -1,11 +1,12 @@
+from django.db.models import F, QuerySet
 from django.shortcuts import get_object_or_404
 from djoser.serializers import UserCreateSerializer, UserSerializer
-from rest_framework import serializers, validators
 from drf_extra_fields.fields import Base64ImageField
-from django.db.models import QuerySet, F
+from rest_framework import serializers
 
-from users.models import User, Follow
-from recipes.models import Recipe, Tag, Ingredient, IngredientInRecipe, ShoppingCart, Favorite
+from recipes.models import (Favorite, Ingredient, IngredientInRecipe, Recipe,
+                            ShoppingCart, Tag)
+from users.models import Follow, User
 from .mixins import UsernameValidateMixin
 
 
@@ -38,7 +39,7 @@ class CustomUserSerializer(UserSerializer):
             'is_subscribed',
         )
 
-    def get_is_subscribed(self, obj: User) -> bool:
+    def get_is_subscribed(self, obj):
         '''Проверка подписки пользователя на автора рецепта.'''
         user = self.context.get('request').user
         if user.is_anonymous or user == obj:
@@ -64,7 +65,13 @@ class RecipeFollowUserField(serializers.Field):
     """Сериализатор для вывода рецептов в подписках."""
 
     def get_attribute(self, instance):
-        return Recipe.objects.filter(author=instance.author)
+        request = self.context.get('request')
+        recipes = Recipe.objects.filter(author=instance.author)
+        if request:
+            limit = request.GET.get('recipes_limit')
+            if limit:
+                return recipes[: int(limit)]
+        return recipes
 
     def to_representation(self, recipes_list):
         recipes_data = []
@@ -104,7 +111,9 @@ class FollowSerializer(serializers.ModelSerializer):
         return Recipe.objects.filter(author=obj.author).count()
 
     def get_is_subscribed(self, obj):
-        return Follow.objects.filter(user=obj.user, author=obj.author).exists()
+        return Follow.objects.filter(
+            user=obj.user, author=obj.author
+        ).exists()
 
 
 class TagSerializer(serializers.ModelSerializer):
@@ -189,19 +198,19 @@ class RecipeSerializer(serializers.ModelSerializer):
         )
 
     @staticmethod
-    def get_ingredients(obj: Recipe) -> QuerySet[dict]:
+    def get_ingredients(obj):
         '''Получает список ингредиентов для рецепта.'''
         ingredients = IngredientInRecipe.objects.filter(recipe=obj)
         return ReadIngredientInRecipeSerializer(ingredients, many=True).data
 
-    def get_is_favorited(self, obj: Recipe) -> bool:
+    def get_is_favorited(self, obj):
         '''Проверяет находится ли рецепт в избанном.'''
         user = self.context.get('request').user
         if user.is_anonymous:
             return False
         return user.favorite_recipes.filter(recipe=obj).exists()
 
-    def get_is_in_shopping_cart(self, obj: Recipe) -> bool:
+    def get_is_in_shopping_cart(self, obj):
         '''Проверяет находится ли рецепт в списке покупок.'''
         user = self.context.get('request').user
         if user.is_anonymous:
@@ -233,9 +242,7 @@ class CreateRecipeSerializer(serializers.ModelSerializer):
         )
 
     @staticmethod
-    def create_ingredients(
-        ingredients: QuerySet[list], recipe: Recipe
-    ) -> None:
+    def create_ingredients(ingredients, recipe):
         '''Создает или обновляет записи в модели IngredientInRecipe для
         указанного рецепта и списка ингредиентов.
         Создает ингредиенты для рецепта.
@@ -268,7 +275,7 @@ class CreateRecipeSerializer(serializers.ModelSerializer):
         )
         return data
 
-    def create(self, validated_data: dict) -> Recipe:
+    def create(self, validated_data):
         '''Создает рецепт.'''
         tags_data = validated_data.pop('tags')
         ingredients_data = validated_data.pop('ingredients')
@@ -281,16 +288,8 @@ class CreateRecipeSerializer(serializers.ModelSerializer):
         recipe.tags.set(tags_data)
         return recipe
 
-    def update(self, recipe: Recipe, validated_data: dict):
-        """Обновляет рецепт.
-
-        Args:
-            recipe (Recipe): Рецепт для изменения.
-            validated_data (dict): Изменённые данные.
-
-        Returns:
-            Recipe: Обновлённый рецепт.
-        """
+    def update(self, recipe, validated_data):
+        """Обновляет рецепт."""
         tags = validated_data.pop("tags")
         ingredients = validated_data.pop("ingredients")
 
@@ -309,7 +308,7 @@ class CreateRecipeSerializer(serializers.ModelSerializer):
         recipe.save()
         return recipe
 
-    def to_representation(self, recipe: Recipe) -> Recipe:
+    def to_representation(self, recipe):
         '''Для поддержки сериализации, для операций чтения.'''
         data = RecipeSerializer(
             recipe,

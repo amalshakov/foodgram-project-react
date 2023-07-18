@@ -1,5 +1,4 @@
 import re
-
 from django.forms import ValidationError
 
 from foodgram.settings import NOT_USERNAME

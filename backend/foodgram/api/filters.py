@@ -2,14 +2,18 @@ from django_filters.rest_framework import FilterSet, filters
 from rest_framework.filters import SearchFilter
 
 from recipes.models import Recipe
-from users.models import User
 
 
 class RecipeFilter(FilterSet):
     """"Фильтр для сортировки рецептов."""""
-    tags = filters.AllValuesMultipleFilter(field_name='tags__slug', label='tags')
+    tags = filters.AllValuesMultipleFilter(
+        field_name='tags__slug',
+        label='tags'
+    )
     is_favorited = filters.BooleanFilter(method='get_is_favorited')
-    is_in_shopping_cart = filters.BooleanFilter(method='get_is_in_shopping_cart')
+    is_in_shopping_cart = filters.BooleanFilter(
+        method='get_is_in_shopping_cart'
+    )
 
     class Meta:
         model = Recipe
@@ -27,7 +31,9 @@ class RecipeFilter(FilterSet):
 
     def get_is_in_shopping_cart(self, queryset, name, value):
         if value:
-            return Recipe.objects.filter(shopping_cart_users__user=self.request.user)
+            return Recipe.objects.filter(
+                shopping_cart_users__user=self.request.user
+            )
         return queryset.exclude(shopping_cart_users__user=self.request.user)
 
 

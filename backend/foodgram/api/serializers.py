@@ -1,16 +1,15 @@
-from django.db.models import F
-from django.shortcuts import get_object_or_404
-from djoser.serializers import UserCreateSerializer, UserSerializer
+from django.db import transaction
+from djoser.serializers import UserCreateSerializer
+from djoser.serializers import UserSerializer as DjoserUserSerializer
 from drf_extra_fields.fields import Base64ImageField
 from rest_framework import serializers
 
 from recipes.models import (Favorite, Ingredient, IngredientInRecipe, Recipe,
                             ShoppingCart, Tag)
 from users.models import Follow, User
-from .mixins import UsernameValidateMixin
 
 
-class CreateUserSerializer(UserCreateSerializer, UsernameValidateMixin):
+class CreateUserSerializer(UserCreateSerializer):
     '''Сериализатор для создания пользователей.'''
 
     class Meta:
@@ -21,12 +20,15 @@ class CreateUserSerializer(UserCreateSerializer, UsernameValidateMixin):
             'first_name',
             'last_name',
             'password',
+            'id',
         )
 
 
-class CustomUserSerializer(UserSerializer):
+class UserSerializer(DjoserUserSerializer):
     '''Сериализатор пользователей.'''
-    is_subscribed = serializers.SerializerMethodField()
+    is_subscribed = serializers.BooleanField(
+        default=False, read_only=True, source='subscribed_exists'
+    )
 
     class Meta:
         model = User
@@ -38,13 +40,6 @@ class CustomUserSerializer(UserSerializer):
             'last_name',
             'is_subscribed',
         )
-
-    def get_is_subscribed(self, obj):
-        '''Проверка подписки пользователя на автора рецепта.'''
-        user = self.context.get('request').user
-        if user.is_anonymous or user == obj:
-            return False
-        return user.follower.filter(author=obj).exists()
 
 
 class RecipeMinifiedSerializer(serializers.ModelSerializer):
@@ -176,11 +171,19 @@ class IngredientInRecipeSerializer(serializers.ModelSerializer):
 class RecipeSerializer(serializers.ModelSerializer):
     '''Сериализатор для получения рецепта/рецептов.'''
     tags = TagSerializer(many=True)
-    author = CustomUserSerializer(read_only=True)
-    ingredients = serializers.SerializerMethodField()
-    is_favorited = serializers.SerializerMethodField()
-    is_in_shopping_cart = serializers.SerializerMethodField()
+    author = UserSerializer(read_only=True)
+    ingredients = ReadIngredientInRecipeSerializer(
+        many=True,
+        source='ingredient_list',
+        read_only=True,
+    )
     image = Base64ImageField()
+    is_favorited = serializers.BooleanField(
+        default=False, read_only=True, source='favorite_exists'
+    )
+    is_in_shopping_cart = serializers.BooleanField(
+        default=False, read_only=True, source='shopping_exists'
+    )
 
     class Meta:
         model = Recipe
@@ -197,25 +200,12 @@ class RecipeSerializer(serializers.ModelSerializer):
             'cooking_time',
         )
 
-    @staticmethod
-    def get_ingredients(obj):
-        '''Получает список ингредиентов для рецепта.'''
-        ingredients = IngredientInRecipe.objects.filter(recipe=obj)
-        return ReadIngredientInRecipeSerializer(ingredients, many=True).data
-
     def get_is_favorited(self, obj):
         '''Проверяет находится ли рецепт в избанном.'''
         user = self.context.get('request').user
         if user.is_anonymous:
             return False
         return user.favorite_recipes.filter(recipe=obj).exists()
-
-    def get_is_in_shopping_cart(self, obj):
-        '''Проверяет находится ли рецепт в списке покупок.'''
-        user = self.context.get('request').user
-        if user.is_anonymous:
-            return False
-        return user.shopping_cart_recipes.filter(recipe=obj).exists()
 
 
 class CreateRecipeSerializer(serializers.ModelSerializer):
@@ -241,40 +231,33 @@ class CreateRecipeSerializer(serializers.ModelSerializer):
             'author',
         )
 
-    @staticmethod
-    def create_ingredients(ingredients, recipe):
-        '''Создает или обновляет записи в модели IngredientInRecipe для
-        указанного рецепта и списка ингредиентов.
-        Создает ингредиенты для рецепта.
-        '''
+    def create_ingredients(self, ingredients, recipe):
+        ingredients_list = []
         for ingredient in ingredients:
-            amount = ingredient['amount']
-            if IngredientInRecipe.objects.filter(
-                    recipe=recipe,
-                    ingredients=get_object_or_404(
-                        Ingredient, id=ingredient['id'])).exists():
-                amount += F('amount')
-            IngredientInRecipe.objects.update_or_create(
+            create_ingredients = IngredientInRecipe(
                 recipe=recipe,
-                ingredients=get_object_or_404(
-                    Ingredient, id=ingredient['id']),
-                defaults={'amount': amount})
+                ingredients_id=ingredient.get('id'),
+                amount=ingredient.get('amount'),
+            )
+            ingredients_list.append(create_ingredients)
+        IngredientInRecipe.objects.bulk_create(ingredients_list)
 
     def validate(self, data):
         """Проверка вводных данных при создании/редактировании рецепта.
         """
-        tags = self.initial_data.get("tags")
-        ingredients = self.initial_data.get("ingredients")
+        tags = self.initial_data.get('tags')
+        ingredients = self.initial_data.get('ingredients')
 
         data.update(
             {
-                "tags": tags,
-                "ingredients": ingredients,
-                "author": self.context.get("request").user,
+                'tags': tags,
+                'ingredients': ingredients,
+                'author': self.context.get('request').user,
             }
         )
         return data
 
+    @transaction.atomic
     def create(self, validated_data):
         '''Создает рецепт.'''
         tags_data = validated_data.pop('tags')
@@ -288,10 +271,11 @@ class CreateRecipeSerializer(serializers.ModelSerializer):
         recipe.tags.set(tags_data)
         return recipe
 
+    @transaction.atomic
     def update(self, recipe, validated_data):
         """Обновляет рецепт."""
-        tags = validated_data.pop("tags")
-        ingredients = validated_data.pop("ingredients")
+        tags = validated_data.pop('tags')
+        ingredients = validated_data.pop('ingredients')
 
         for key, value in validated_data.items():
             if hasattr(recipe, key):
@@ -329,7 +313,7 @@ class ShopListSerializer(serializers.ModelSerializer):
         user = data['user']
         if user.shopping_cart_recipes.filter(recipe=data['recipe']).exists():
             raise serializers.ValidationError(
-                'Рецепт уже добавлен в корзину'
+                'Рецепт уже добавлен в список покупок'
             )
         return data
 

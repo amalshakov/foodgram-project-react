@@ -1,5 +1,4 @@
 from django_filters.rest_framework import FilterSet, filters
-from rest_framework.filters import SearchFilter
 
 from recipes.models import Recipe
 
@@ -34,8 +33,4 @@ class RecipeFilter(FilterSet):
             return Recipe.objects.filter(
                 shopping_cart_users__user=self.request.user
             )
-        return queryset.exclude(shopping_cart_users__user=self.request.user)
-
-
-class IngredientSearchFilter(SearchFilter):
-    search_param = 'name'
+        return queryset

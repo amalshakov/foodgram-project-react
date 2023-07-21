@@ -1,15 +1,19 @@
 import os
 
-from distutils import util
 from dotenv import load_dotenv
 
 load_dotenv()
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-SECRET_KEY = os.getenv('SECRET_KEY')
+SECRET_KEY = os.getenv('SECRET_KEY', default='secret')
 
-DEBUG = bool(util.strtobool(os.getenv('DEBUG', default='False')))
+DEBUG = os.getenv('DEBUG', 'False')
+if DEBUG == 'True':
+    DEBUG = True
+else:
+    DEBUG = False
+
 
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', default='127.0.0.1').split(',')
 
@@ -65,7 +69,7 @@ DATABASES = {
         'NAME': os.getenv('POSTGRES_DB', 'django'),
         'USER': os.getenv('POSTGRES_USER', 'django'),
         'PASSWORD': os.getenv('POSTGRES_PASSWORD', ''),
-        #  'HOST': os.getenv('DB_HOST', ''), РАССКОМЕНТИРОВАТЬ перед деплоем
+        'HOST': os.getenv('DB_HOST', 'localhost'),
         'PORT': os.getenv('DB_PORT', 5432)
     }
 }
@@ -120,9 +124,9 @@ DJOSER = {
     'LOGIN_FIELD': 'email',
     'HIDE_USERS': False,
     'SERIALIZERS': {
-        'user': ('api.serializers.CustomUserSerializer'),
+        'user': ('api.serializers.UserSerializer'),
         'user_create': ('api.serializers.CreateUserSerializer'),
-        'current_user': ('api.serializers.CustomUserSerializer'),
+        'current_user': ('api.serializers.UserSerializer'),
     },
     'PERMISSIONS': {
         'user': ('rest_framework.permissions.IsAuthenticated'),

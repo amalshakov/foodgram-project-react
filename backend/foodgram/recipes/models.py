@@ -1,9 +1,9 @@
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.db.models import UniqueConstraint
+
 from foodgram.settings import (MAX_AMOUNT_INGREDIENT, MAX_COOKING_TIME,
                                MIN_AMOUNT_INGREDIENT, MIN_COOKING_TIME)
-
 from users.models import User
 from .validators import validate_slug
 
@@ -125,6 +125,7 @@ class IngredientInRecipe(models.Model):
     recipe = models.ForeignKey(
         to=Recipe,
         on_delete=models.CASCADE,
+        related_name='ingredient_list'
     )
     ingredients = models.ForeignKey(
         to=Ingredient,

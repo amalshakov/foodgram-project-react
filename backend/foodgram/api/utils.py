@@ -1,39 +1,7 @@
 from django.db.models import Sum
 from django.http import FileResponse
-from django.shortcuts import get_object_or_404
-from rest_framework import serializers, status
-from rest_framework.response import Response
 
-from recipes.models import IngredientInRecipe, Recipe
-
-
-def add_recipe(request, add_serializer, pk=None):
-    """Добавляет рецепт."""
-    recipe = get_object_or_404(Recipe, id=pk)
-    context = {'request': request}
-    data = {
-        'user': request.user.id,
-        'recipe': recipe.id
-    }
-    serializer = add_serializer(data=data, context=context)
-    serializer.is_valid(raise_exception=True)
-    serializer.save()
-    return Response(serializer.data, status=status.HTTP_201_CREATED)
-
-
-def del_recipe(request, model, pk=None):
-    """Удаляет рецепт."""
-    recipe = get_object_or_404(Recipe, id=pk)
-    user = request.user
-    try:
-        obj = model.objects.get(user=user, recipe=recipe)
-    except model.DoesNotExist:
-        raise serializers.ValidationError(
-            'Невозможно удалить. Рецепт не был добавлен!'
-        )
-    else:
-        obj.delete()
-    return Response(status=status.HTTP_204_NO_CONTENT)
+from recipes.models import IngredientInRecipe
 
 
 def get_file_shopping_cart(user):

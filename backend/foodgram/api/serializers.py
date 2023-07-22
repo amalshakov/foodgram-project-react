@@ -179,10 +179,10 @@ class RecipeSerializer(serializers.ModelSerializer):
     )
     image = Base64ImageField()
     is_favorited = serializers.BooleanField(
-        default=False, read_only=True, source='favorite_exists'
+        default=False, read_only=True
     )
     is_in_shopping_cart = serializers.BooleanField(
-        default=False, read_only=True, source='shopping_exists'
+        default=False, read_only=True
     )
 
     class Meta:
@@ -199,13 +199,6 @@ class RecipeSerializer(serializers.ModelSerializer):
             'text',
             'cooking_time',
         )
-
-    def get_is_favorited(self, obj):
-        '''Проверяет находится ли рецепт в избанном.'''
-        user = self.context.get('request').user
-        if user.is_anonymous:
-            return False
-        return user.favorite_recipes.filter(recipe=obj).exists()
 
 
 class CreateRecipeSerializer(serializers.ModelSerializer):
@@ -276,19 +269,17 @@ class CreateRecipeSerializer(serializers.ModelSerializer):
         """Обновляет рецепт."""
         tags = validated_data.pop('tags')
         ingredients = validated_data.pop('ingredients')
-
+        author = recipe.author
         for key, value in validated_data.items():
             if hasattr(recipe, key):
                 setattr(recipe, key, value)
-
         if tags:
             recipe.tags.clear()
             recipe.tags.set(tags)
-
         if ingredients:
             recipe.ingredients.clear()
             self.create_ingredients(ingredients, recipe)
-
+        recipe.author = author
         recipe.save()
         return recipe
 

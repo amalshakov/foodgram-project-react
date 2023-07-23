@@ -5,7 +5,8 @@ from djoser.views import UserViewSet as DjoserUserViewSet
 from rest_framework import serializers, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.filters import SearchFilter
-from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated
+from rest_framework.permissions import (AllowAny, IsAdminUser, IsAuthenticated,
+                                        IsAuthenticatedOrReadOnly)
 from rest_framework.response import Response
 
 from recipes.models import Favorite, Ingredient, Recipe, ShoppingCart, Tag
@@ -84,9 +85,13 @@ class UserViewSet(DjoserUserViewSet):
     def delete_subscribe(self, request, id=None):
         '''Отписаться от автора рецепта.'''
         follower = get_object_or_404(User, id=id)
-        if self.request.user.follower.filter(author=follower).exists():
-            Follow.objects.filter(user=self.request.user,
-                                  author=follower).delete()
+        del_count, _ = (
+            Follow
+            .objects
+            .filter(user=self.request.user, author=follower)
+            .delete()
+        )
+        if del_count:
             return Response({'message': 'Вы успешно отписаны'},
                             status=status.HTTP_204_NO_CONTENT)
         return Response({'message': 'Подписки и так нет'},
@@ -104,7 +109,9 @@ class TagViewSet(viewsets.ReadOnlyModelViewSet):
 class RecipeViewSet(viewsets.ModelViewSet):
     '''ViewSet для работы с моделью Recipe.'''
     pagination_class = PageLimitPagination
-    permission_classes = [IsAuthorOrReadOnly | IsAdminUser]
+    permission_classes = [
+        IsAuthorOrReadOnly & IsAuthenticatedOrReadOnly | IsAdminUser
+    ]
     filter_backends = (DjangoFilterBackend,)
     filterset_class = RecipeFilter
 
@@ -115,15 +122,6 @@ class RecipeViewSet(viewsets.ModelViewSet):
             .select_related('author')
             .prefetch_related('tags', 'ingredients')
         )
-        favorited = self.request.query_params.get('is_favorited')
-        author = self.request.query_params.get('author')
-        tags = self.request.query_params.getlist('tags')
-        if favorited:
-            queryset = queryset.filter(favorite_users__user=self.request.user)
-        if author:
-            queryset = queryset.filter(author=author)
-        if tags:
-            queryset = queryset.filter(tags__slug__in=tags).distinct()
         if self.request.user.is_authenticated:
             return queryset.annotate(
                 is_favorited=Exists(

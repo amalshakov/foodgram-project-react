@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 
 from dotenv import load_dotenv
 
@@ -98,7 +99,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 STATIC_URL = '/static/'
 MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+MEDIA_ROOT = Path(BASE_DIR) / 'media'
 
 AUTH_USER_MODEL = 'users.User'
 
@@ -133,7 +134,7 @@ DJOSER = {
 #  Константы для моделей:
 EMAIL_MAX_LENGTH = 254
 USERNAME_MAX_LENGTH = 150
-NOT_USERNAME = ('me',)
+FORBIDDEN_USERNAMES = ('me',)
 MAX_COOKING_TIME = 1000
 MIN_COOKING_TIME = 1
 MAX_AMOUNT_INGREDIENT = 10000

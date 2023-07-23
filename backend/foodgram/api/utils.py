@@ -1,21 +1,35 @@
+import csv
+from io import StringIO
+
 from django.db.models import Sum
-from django.http import FileResponse
+from django.http import HttpResponse
 
 from recipes.models import IngredientInRecipe
 
 
 def get_file_shopping_cart(user):
     '''Отдает файл с покупками(ингредиентами).'''
-    ingredients = IngredientInRecipe.objects.filter(
-        recipe__shopping_cart_users__user=user
-    ).values('ingredients__name', 'ingredients__measurement_unit'
-             ).annotate(amount=Sum('amount'))
+    ingredients = (
+        IngredientInRecipe
+        .objects
+        .filter(recipe__shopping_cart_users__user=user)
+        .values('ingredients__name', 'ingredients__measurement_unit')
+        .annotate(amount=Sum('amount'))
+    )
     data = ingredients.values_list(
         'ingredients__name',
         'ingredients__measurement_unit',
         'amount'
     )
-    shopping_cart = 'Список покупок:\n'
+    file = StringIO()
+    writer = csv.writer(file)
+    writer.writerow(
+        ['Название ингредиента', 'Единица измерения', 'Количество']
+    )
     for name, measurement_unit, amount in data:
-        shopping_cart += (f'{name} {amount} {measurement_unit}\n')
-    return FileResponse(shopping_cart, content_type='text/plain')
+        writer.writerow([name, measurement_unit, amount])
+    file.seek(0)
+    response = HttpResponse(file, content_type='text/plain')
+    response[
+        'Content-Disposition'] = 'attachment; filename="shopping_cart.txt"'
+    return response

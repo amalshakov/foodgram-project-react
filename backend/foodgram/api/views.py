@@ -2,7 +2,7 @@ from django.db.models import Exists, OuterRef
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from djoser.views import UserViewSet as DjoserUserViewSet
-from rest_framework import serializers, status, viewsets
+from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.filters import SearchFilter
 from rest_framework.permissions import (AllowAny, IsAdminUser, IsAuthenticated,
@@ -162,15 +162,18 @@ class RecipeViewSet(viewsets.ModelViewSet):
         """Удаляет рецепт."""
         recipe = get_object_or_404(Recipe, id=pk)
         user = request.user
-        try:
-            obj = model.objects.get(user=user, recipe=recipe)
-        except model.DoesNotExist:
-            raise serializers.ValidationError(
-                'Невозможно удалить. Рецепт не был добавлен!'
-            )
-        else:
-            obj.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        del_count, _ = (
+            model
+            .objects
+            .filter(user=user, recipe=recipe)
+            .delete()
+        )
+        if del_count:
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        return Response(
+            {'message': 'Невозможно удалить. Рецепт не был добавлен!'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
 
     @action(
         detail=True,

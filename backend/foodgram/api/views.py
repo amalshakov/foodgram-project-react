@@ -4,14 +4,13 @@ from django_filters.rest_framework import DjangoFilterBackend
 from djoser.views import UserViewSet as DjoserUserViewSet
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
-from rest_framework.filters import SearchFilter
 from rest_framework.permissions import (AllowAny, IsAdminUser, IsAuthenticated,
                                         IsAuthenticatedOrReadOnly)
 from rest_framework.response import Response
 
 from recipes.models import Favorite, Ingredient, Recipe, ShoppingCart, Tag
 from users.models import Follow, User
-from .filters import RecipeFilter
+from .filters import RecipeFilter, IngredientSearchFilter
 from .pagination import PageLimitPagination
 from .permissions import IsAuthorOrReadOnly
 from .serializers import (CreateRecipeSerializer, FavoriteSerializer,
@@ -217,6 +216,7 @@ class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
     '''ViewSet для работы с моделью Ingredient.'''
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
+    permission_classes = (AllowAny,)
     pagination_class = None
-    filter_backends = (SearchFilter,)
+    filter_backends = (IngredientSearchFilter,)
     search_fields = ('^name',)

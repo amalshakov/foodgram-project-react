@@ -1,13 +1,12 @@
 import re
 
+from django.conf import settings
 from django.forms import ValidationError
-
-from foodgram.settings import FORBIDDEN_USERNAMES
 
 
 def validate_username(username):
-    if username in FORBIDDEN_USERNAMES:
-        raise ValidationError('Использовать имя "{username}" запрещено')
+    if username in settings.FORBIDDEN_USERNAMES:
+        raise ValidationError(f'Использовать имя <{username}> запрещено')
     result = re.sub(r'[\w.@+-]+', '', username)
     if result:
         raise ValidationError(

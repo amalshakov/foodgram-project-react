@@ -1,9 +1,8 @@
+from django.conf import settings
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.db.models import UniqueConstraint
 
-from foodgram.settings import (MAX_AMOUNT_INGREDIENT, MAX_COOKING_TIME,
-                               MIN_AMOUNT_INGREDIENT, MIN_COOKING_TIME)
 from users.models import User
 from .validators import validate_slug
 
@@ -76,10 +75,12 @@ class Recipe(models.Model):
         help_text='Введите время приготовления блюда, в минутах',
         validators=(
             MaxValueValidator(
-                MAX_COOKING_TIME, 'Слишком большое время приготовления блюда'
+                settings.MAX_COOKING_TIME,
+                'Слишком большое время приготовления блюда'
             ),
             MinValueValidator(
-                MIN_COOKING_TIME, 'Недопустимое время приготовления блюда'
+                settings.MIN_COOKING_TIME,
+                'Недопустимое время приготовления блюда'
             ),
         ),
     )
@@ -136,10 +137,12 @@ class IngredientInRecipe(models.Model):
         help_text='Введите количество ингредиента',
         validators=(
             MinValueValidator(
-                MIN_AMOUNT_INGREDIENT, 'Некорректное количество ингредиента'
+                settings.MIN_AMOUNT_INGREDIENT,
+                'Некорректное количество ингредиента'
             ),
             MaxValueValidator(
-                MAX_AMOUNT_INGREDIENT, 'Очень большое количество ингредиента'
+                settings.MAX_AMOUNT_INGREDIENT,
+                'Очень большое количество ингредиента'
             ),
         ),
     )

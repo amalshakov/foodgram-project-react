@@ -8,8 +8,8 @@ from recipes.models import Ingredient
 
 def process_file(name: str):
     return csv.reader(open(os.path.join(
-        settings.BASE_DIR, '../../data/', name), 'r', encoding='utf-8'),
-        delimiter=',')
+        settings.BASE_DIR, 'recipes/data/', name
+        ), 'r', encoding='utf-8'), delimiter=',')
 
 
 class Command(BaseCommand):

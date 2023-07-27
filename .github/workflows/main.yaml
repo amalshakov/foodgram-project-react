@@ -28,8 +28,7 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install flake8==6.0.0 flake8-isort==6.0.0
-        cd backend/foodgram/
-        pip install -r requirements.txt
+        pip install -r backend/foodgram/requirements.txt
     - name: Test with flake8 and django tests
       env:
         POSTGRES_USER: postgres
@@ -39,7 +38,6 @@ jobs:
         DB_PORT: 5432
         SECRET_KEY: ^m_okyz=0(fok91uiss13#69wbq!@ijrvenvo7321hecjt3jjl
       run: |
-        cd backend/
         python -m flake8
         python manage.py test
 

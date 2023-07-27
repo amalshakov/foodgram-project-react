@@ -15,7 +15,6 @@ services:
 
   frontend:
     image: amalshakov/foodgram_frontend
-    # command: cp -r /app/build/. /static/
     volumes:
       - ../frontend/:/app/result_build/
 

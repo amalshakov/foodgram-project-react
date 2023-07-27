@@ -38,4 +38,5 @@ class RecipeFilter(FilterSet):
 
 
 class IngredientSearchFilter(SearchFilter):
+    '''Фильтр.'''
     search_param = 'name'

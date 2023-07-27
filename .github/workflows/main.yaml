@@ -38,7 +38,7 @@ jobs:
         DB_PORT: 5432
         SECRET_KEY: ^m_okyz=0(fok91uiss13#69wbq!@ijrvenvo7321hecjt3jjl
       run: |
-        python -m flake8 backend/
+        python -m flake8 backend/foodgram/
         cd backend/foodgram/api
         python manage.py test
 

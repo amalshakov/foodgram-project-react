@@ -3,6 +3,7 @@
 ### https://malshakovfoodgram.hopto.org/
 ### доступ в админку:
 - login: admin
+- email: admin@fake.ru
 - password: change_me
 ### Запустите проект в контейнерах:
 - клонируйте проект:

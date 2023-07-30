@@ -238,9 +238,16 @@ class CreateRecipeSerializer(serializers.ModelSerializer):
     def validate(self, data):
         """Проверка вводных данных при создании/редактировании рецепта.
         """
+        ingredients = data.get('ingredients')
+        ingredients_list = []
+        for item in ingredients:
+            if item['id'] in ingredients_list:
+                raise serializers.ValidationError(
+                    'Нельзя добавлять одинаковые ингредиенты!'
+                )
+            ingredients_list.append(item['id'])
         tags = self.initial_data.get('tags')
         ingredients = self.initial_data.get('ingredients')
-
         data.update(
             {
                 'tags': tags,
